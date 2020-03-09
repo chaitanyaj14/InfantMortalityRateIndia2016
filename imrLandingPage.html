@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRM_Assignment_3</title>
+    <link rel="stylesheet" href="lib/leaflet/leaflet.css"/>
+    <link rel="stylesheet" href="lib/leaflet/leaflet.label.css"/>
+    <script src="lib/leaflet/leaflet-src.js"></script>
+    <script src="lib/leaflet/leaflet.label.js"></script>
+    <script src="http://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    <script src="lib/leaflet//leaflet-providers.js"></script>
+    
+    <script src="data/IMR_India_2016.geojson"></script>
+    <style type="text/css">
+        #map { height: 500px;}
+        .legend{ line-height: 1.5em}
+        .legend i{ width: 5em; float: left}
+        #link { 
+            text-decoration: none; 
+        } 
+    </style>
+</head>
+<body>
+    <h1 align = "center">Infant Mortality Rate 2016 (NITI Aayog)</h1>
+    <p align = "center"><a id = "link" href="https://github.com/chaitanyaj14/InfantMortalityRateIndia2016">GitHub Repository - chaitanyaj14</a></p>
+    <div id = "map">
+        <script>
+            var imrIndia;
+
+            function highlightFeature(e){
+                var layer = e.target;
+                layer.setStyle(
+                    {
+                        weight: 5,
+                        color: 'black',
+                        fillColor: 'white',
+                        fillOpacity: 0.2
+                    }
+                );
+                if(!L.Browser.ie && !L.Browser.opera){
+                    layer.bringToFront();
+                }
+            }
+
+            function resetHighlight(e){
+                imrIndia.resetStyle(e.target);
+            }
+
+            function zoomToFeature(e){
+                map.fitBounds(e.target.getBounds());
+            }
+
+            var markers = new Array();
+            function imrIndiaOnEachFeature(feature, layer){
+                layer.bindTooltip(feature.properties.NAME_1.toString()+"<br>IMR: " + feature.properties.IMR.toString(), {noHide: true}
+                
+                );
+
+                layer.on(
+                    {
+                        mouseover: highlightFeature,
+                        mouseout: resetHighlight,
+                        click: zoomToFeature
+                    }
+                );
+            }
+
+            function getStateColor(IMR){
+                if(IMR > 40){
+                    return 'red';
+                }else if(IMR <= 40 && IMR >= 21) {
+                    return 'yellow';
+                }else {
+                    return 'green';
+                }
+            }
+
+            function stateStyle(feature){
+                return{
+                    fillColor: getStateColor(feature.properties.IMR),
+                    weight: 2,
+                    opacity: 1,
+                    color: 'white',
+                    dashArray: 3,
+                    fillOpacity: 0.7
+                }
+            }
+
+            var map = L.map('map').setView([21.25500, 76.16366],1);
+
+            var mapLayer = L.tileLayer.provider('Esri.WorldTopoMap').addTo(map);
+            
+
+            imrIndia = L.geoJson(
+                imrIndia,
+                    {
+                        style: stateStyle,
+                        onEachFeature: imrIndiaOnEachFeature
+                    }).addTo(map);
+            map.fitBounds(imrIndia.getBounds());
+
+            var legend = L.control({position: 'bottomright'});
+            legend.onAdd = function(map){
+                var div = L.DomUtil.create('div','legend');
+                var labels = ['IMR <= 20', "IMR > 20 and IMR <= 40", "IMR > 40"];
+                var grades = [0, 21, 41];
+                div.innerHTML = '<div><b>Legend<b><div>';
+                for (var i = 0; i< grades.length; i++){
+                    div.innerHTML += '<i style = background:'
+                    + getStateColor(grades[i]) + '>&nbsp;&nbsp;</i>&nbsp;&nbsp;' 
+                    + labels[i]+ '<br/>';
+                }
+                return div;
+            }
+            legend.addTo(map);
+
+            var baseMaps = {"Base Layer ":mapLayer};
+            var overlayMaps = {"IMR": imrIndia };
+            L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+       </script>
+    </div>
+</body>
+</html>
